@@ -21,8 +21,9 @@ def safe_ticker_key(ticker):
 def convert_relative_time(time_str):
     """Converts relative time (e.g., '43 minutes ago') to an approximate timestamp in local time."""
     now = datetime.now()  # Get current time in local timezone
-    
-    if "minute" in time_str:
+    if time_str == 'yesterday':
+        return now - timedelta(days=1)
+    elif "minute" in time_str:
         minutes = int(time_str.split()[0])
         return now - timedelta(minutes=minutes)
     elif "hour" in time_str:
@@ -119,6 +120,8 @@ st.write("Latest financial news with real-time stock price change comparison")
 
 # Get and display news
 news_df = get_financial_news()
+st.dataframe(news_df)
+
 news_df["Sentiment"] = news_df["title"].apply(analyze_sentiment)
 news_df["Subjectivity"] = news_df["title"].apply(analyze_subjectivity)
 
@@ -143,11 +146,10 @@ if selected_stocks:
     # Ensure news timestamps remain in local time
     news_timeline_df["Publishing Time"] = pd.to_datetime(news_timeline_df["Publishing Time"])
 
-    # Determine min and max timestamps for shared x-axis range
-    all_timestamps = pd.concat([intraday_df["Datetime"], news_timeline_df["Publishing Time"]])
-    x_min, x_max = all_timestamps.min() - timedelta(minutes=30), all_timestamps.max() + timedelta(minutes=30)  # 30-min buffer
-
     if intraday_df is not None and not news_timeline_df.empty:
+        # Determine min and max timestamps for shared x-axis range
+        all_timestamps = pd.concat([intraday_df["Datetime"], news_timeline_df["Publishing Time"]])
+        x_min, x_max = all_timestamps.min() - timedelta(minutes=30), all_timestamps.max() + timedelta(minutes=30)  # 30-min buffer
         # Stock Price Timeline
         fig_stock = px.line(
             intraday_df,
